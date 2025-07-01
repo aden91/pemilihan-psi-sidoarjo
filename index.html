@@ -442,7 +442,8 @@
                     emailInput.disabled = true;
                     votingSection.classList.add('hidden');
                     resultsSection.classList.remove('hidden'); // Tampilkan hasil meskipun sudah memilih
-                    backToStartButton.classList.add('hidden'); // Pastikan tombol ini tersembunyi jika sudah memilih
+                    backToStartButton.classList.remove('hidden'); // Tampilkan tombol kembali ke awal
+                    backToStartButton.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Gulir ke tombol ini
                 } else {
                     authMessage.textContent = 'Verifikasi berhasil! Silakan pilih kandidat Anda.';
                     authMessage.className = 'text-sm mt-4 text-center text-green-600 font-medium';
@@ -537,11 +538,27 @@
 
         // Event listener untuk tombol "Kembali ke Awal"
         backToStartButton.addEventListener('click', () => {
-            votingSection.classList.add('hidden'); // Sembunyikan bagian voting
-            authSection.classList.remove('hidden'); // Tampilkan bagian autentikasi
-            resultsSection.classList.remove('hidden'); // Pastikan grafik tetap terlihat
-            backToStartButton.classList.add('hidden'); // Sembunyikan tombol ini
-            window.scrollTo({ top: 0, behavior: 'smooth' }); // Gulir ke atas halaman
+            // Sembunyikan bagian voting
+            votingSection.classList.add('hidden'); 
+            // Tampilkan bagian autentikasi
+            authSection.classList.remove('hidden'); 
+
+            // Reset input form
+            fullNameInput.value = '';
+            emailInput.value = '';
+            fullNameInput.disabled = false;
+            emailInput.disabled = false;
+            verifyButton.disabled = false;
+            authMessage.textContent = ''; // Hapus pesan autentikasi
+
+            // Pastikan grafik tetap terlihat (sudah di-handle oleh setupResultsListener)
+            resultsSection.classList.remove('hidden'); 
+
+            // Sembunyikan tombol ini lagi
+            backToStartButton.classList.add('hidden'); 
+
+            // Gulir ke atas halaman
+            window.scrollTo({ top: 0, behavior: 'smooth' }); 
         });
 
 
