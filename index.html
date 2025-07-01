@@ -67,6 +67,19 @@
             color: #1f2937;
             transform: translateY(-2px);
         }
+        /* Spinner CSS */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen p-4">
@@ -101,8 +114,9 @@
                     <input type="email" id="email" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-base" placeholder="email@contoh.com">
                 </div>
             </div>
-            <button id="verifyButton" class="w-full text-white font-bold py-3 px-4 rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 transition duration-200 ease-in-out btn-primary">
-                Verifikasi & Lanjutkan
+            <button id="verifyButton" class="w-full text-white font-bold py-3 px-4 rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 transition duration-200 ease-in-out btn-primary flex items-center justify-center">
+                <span id="verifyButtonText">Verifikasi & Lanjutkan</span>
+                <span id="verifySpinner" class="spinner ml-2 hidden"></span>
             </button>
             <p id="authMessage" class="text-sm mt-4 text-center font-medium"></p>
         </div>
@@ -115,8 +129,9 @@
             </div>
 
             <div class="flex flex-col items-center justify-center"> <!-- Menggunakan flex-col untuk menumpuk tombol dan pesan -->
-                <button id="voteButton" class="text-white font-bold py-4 px-10 rounded-full shadow-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 text-xl transition duration-200 ease-in-out btn-primary">
-                    Kirim Suara Saya
+                <button id="voteButton" class="text-white font-bold py-4 px-10 rounded-full shadow-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 text-xl transition duration-200 ease-in-out btn-primary flex items-center justify-center">
+                    <span id="voteButtonText">Kirim Suara Saya</span>
+                    <span id="voteSpinner" class="spinner ml-2 hidden"></span>
                 </button>
                 <p id="voteMessage" class="text-base mt-4 text-center font-medium"></p>
                 <button id="backToStartButton" class="hidden mt-4 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition duration-200 ease-in-out">
@@ -193,9 +208,13 @@
         const fullNameInput = document.getElementById('fullName');
         const emailInput = document.getElementById('email');
         const verifyButton = document.getElementById('verifyButton');
+        const verifyButtonText = document.getElementById('verifyButtonText'); // Teks tombol verifikasi
+        const verifySpinner = document.getElementById('verifySpinner');     // Spinner verifikasi
         const authMessage = document.getElementById('authMessage');
         const candidatesList = document.getElementById('candidates-list');
         const voteButton = document.getElementById('voteButton');
+        const voteButtonText = document.getElementById('voteButtonText'); // Teks tombol vote
+        const voteSpinner = document.getElementById('voteSpinner');       // Spinner vote
         const voteMessage = document.getElementById('voteMessage');
         const resultsSection = document.getElementById('results-section');
         const chartContainer = document.getElementById('chart-container');
@@ -418,9 +437,13 @@
                 return;
             }
 
-            authMessage.textContent = 'Memverifikasi...';
-            authMessage.className = 'text-sm mt-4 text-center text-red-600 font-medium';
+            // Tampilkan spinner dan nonaktifkan tombol
+            verifyButtonText.classList.add('hidden');
+            verifySpinner.classList.remove('hidden');
             verifyButton.disabled = true;
+            authMessage.textContent = 'Memverifikasi keanggotaan Anda, mohon tunggu...';
+            authMessage.className = 'text-sm mt-4 text-center text-blue-600 font-medium';
+
 
             try {
                 if (!db) {
@@ -460,6 +483,9 @@
                 authMessage.textContent = 'Verifikasi gagal. Silakan coba lagi.';
                 authMessage.className = 'text-sm mt-4 text-center text-red-600 font-medium';
             } finally {
+                // Sembunyikan spinner dan aktifkan kembali tombol
+                verifyButtonText.classList.remove('hidden');
+                verifySpinner.classList.add('hidden');
                 verifyButton.disabled = false;
             }
         });
@@ -484,9 +510,12 @@
                 return;
             }
 
-            voteMessage.textContent = 'Mengirim suara Anda...';
-            voteMessage.className = 'text-base mt-4 text-center text-red-600 font-medium';
+            // Tampilkan spinner dan nonaktifkan tombol
+            voteButtonText.classList.add('hidden');
+            voteSpinner.classList.remove('hidden');
             voteButton.disabled = true;
+            voteMessage.textContent = 'Mengirim suara Anda, mohon tunggu...';
+            voteMessage.className = 'text-base mt-4 text-center text-blue-600 font-medium';
 
             try {
                 if (!db) {
@@ -525,6 +554,9 @@
                     voteMessage.className = 'text-base mt-4 text-center text-red-600 font-medium';
                 }
             } finally {
+                // Sembunyikan spinner dan aktifkan kembali tombol (jika tidak dinonaktifkan karena suara ganda)
+                voteButtonText.classList.remove('hidden');
+                voteSpinner.classList.add('hidden');
                 if (!voteButton.disabled) {
                     voteButton.disabled = false;
                 }
