@@ -33,12 +33,6 @@
             box-shadow: 0 0 0 5px rgba(220, 38, 38, 0.7); /* Bayangan merah yang kuat saat dipilih */
             background-color: #fef2f2; /* Latar belakang sangat terang saat dipilih */
         }
-        /* Styling untuk bar grafik */
-        .bar-chart-bar {
-            background-color: #ef4444; /* Merah PSI */
-            transition: height 0.5s ease-out; /* Transisi untuk perubahan tinggi bar */
-            border-radius: 4px 4px 0 0; /* Sudut membulat di atas */
-        }
         /* Memastikan gambar mengisi area tanpa terdistorsi dan terlihat jelas */
         .candidate-photo, .psi-logo {
             image-rendering: -webkit-optimize-contrast;
@@ -79,6 +73,23 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        /* Styling untuk tabel */
+        .results-table th, .results-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        .results-table th {
+            background-color: #f0f2f5;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .results-table tbody tr:hover {
+            background-color: #f7fafc;
+        }
+        .results-table tbody tr:last-child td {
+            border-bottom: none;
         }
     </style>
 </head>
@@ -143,8 +154,8 @@
         <!-- Bagian Hasil Pemilihan (Tersembunyi secara default, ditampilkan setelah verifikasi) -->
         <div id="results-section" class="hidden mt-12 p-6 bg-white rounded-lg border border-gray-200 shadow-md">
             <h2 class="text-2xl font-bold text-red-700 mb-6 text-center">Hasil Pemilihan Sementara</h2>
-            <div id="chart-container" class="flex items-end justify-around h-64 bg-gray-50 p-4 rounded-lg shadow-inner border border-gray-200">
-                <!-- Grafik bar akan dimuat di sini oleh JavaScript -->
+            <div id="chart-container" class="w-full overflow-x-auto"> <!-- Kontainer untuk tabel agar responsif -->
+                <!-- Tabel perolehan suara akan dimuat di sini oleh JavaScript -->
             </div>
             <p class="text-center text-gray-600 text-sm mt-4">Data diperbarui secara real-time.</p>
         </div>
@@ -357,39 +368,59 @@
         }
 
         /**
-         * Merender grafik hasil pemilihan.
+         * Merender tabel hasil pemilihan.
          * @param {Object} voteCounts - Objek berisi jumlah suara per kandidat.
          * @param {number} totalVotes - Total suara keseluruhan.
          */
         function renderResultsGraph(voteCounts, totalVotes) {
-            chartContainer.innerHTML = ''; // Bersihkan kontainer grafik
+            chartContainer.innerHTML = ''; // Bersihkan kontainer grafik (sekarang tabel)
+            
+            let tableHTML = `
+                <table class="min-w-full bg-white rounded-lg shadow-md results-table">
+                    <thead>
+                        <tr>
+                            <th class="py-3 px-4 border-b-2 border-gray-200 bg-gray-100 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider rounded-tl-lg">Kandidat</th>
+                            <th class="py-3 px-4 border-b-2 border-gray-200 bg-gray-100 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider rounded-tr-lg">Jumlah Suara</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
             if (totalVotes === 0) {
-                chartContainer.innerHTML = '<p class="text-gray-500 text-center w-full">Belum ada suara masuk.</p>';
-                return;
+                tableHTML += `
+                    <tr>
+                        <td colspan="2" class="py-4 px-4 text-center text-gray-500">Belum ada suara masuk.</td>
+                    </tr>
+                `;
+            } else {
+                // Urutkan kandidat berdasarkan jumlah suara (opsional, tapi bagus untuk tabel)
+                const sortedCandidates = candidates.map(candidate => ({
+                    ...candidate,
+                    votes: voteCounts[candidate.id] || 0
+                })).sort((a, b) => b.votes - a.votes); // Urutkan dari suara terbanyak
+
+                sortedCandidates.forEach(candidate => {
+                    tableHTML += `
+                        <tr>
+                            <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-800">${candidate.name}</td>
+                            <td class="py-3 px-4 whitespace-nowrap text-sm font-bold text-gray-900">${candidate.votes}</td>
+                        </tr>
+                    `;
+                });
             }
 
-            // Temukan kandidat dengan suara terbanyak untuk skala
-            const maxVotes = Math.max(...Object.values(voteCounts));
-
-            candidates.forEach(candidate => {
-                const votes = voteCounts[candidate.id] || 0;
-                const percentage = totalVotes > 0 ? (votes / totalVotes) * 100 : 0;
-                // Tinggi bar relatif terhadap suara terbanyak, dengan tinggi minimum
-                const barHeight = maxVotes > 0 ? (votes / maxVotes) * 100 : 0; // Skala 0-100% dari tinggi kontainer
-                const displayHeight = Math.max(barHeight, 5); // Tinggi minimum 5% untuk bar 0 suara
-
-                const barElement = document.createElement('div');
-                barElement.className = 'flex flex-col items-center mx-2';
-                barElement.innerHTML = `
-                    <div class="relative w-16 bg-gray-200 rounded-t-lg flex items-end justify-center overflow-hidden h-full">
-                        <div class="bar-chart-bar w-full" style="height: ${displayHeight}%;"></div>
-                        <span class="absolute top-0 text-sm font-bold text-gray-800 bg-white bg-opacity-75 px-1 rounded-b-sm">${votes}</span>
-                    </div>
-                    <span class="mt-2 text-base font-semibold text-gray-700 text-center">${candidate.name.split(' ')[1]}</span>
-                    <span class="text-xs text-gray-500">${percentage.toFixed(1)}%</span>
-                `;
-                chartContainer.appendChild(barElement);
-            });
+            tableHTML += `
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td class="py-3 px-4 font-bold text-gray-800 text-sm">Total</td>
+                            <td class="py-3 px-4 font-bold text-gray-900 text-sm">${totalVotes}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            `;
+            
+            chartContainer.innerHTML = tableHTML;
         }
 
         /**
